@@ -5,11 +5,12 @@ import java.util.Map;
 
 import javax.management.RuntimeErrorException;
 
-public class foreground {
-    Map<String, String> colors;
+public class Color {
+    Map<String, String> foreground;
+    Map<String, String> background;
 
-    public foreground() {
-        colors = new HashMap<>() {{
+    public Color() {
+        foreground = new HashMap<>() {{
             put("black", "\u001B[0;30m");
             put("red", "\u001B[0;31m");
             put("green", "\u001B[0;32m");
@@ -23,8 +24,8 @@ public class foreground {
     }
 
     public String getAnsi(String color) {
-        if (colors.containsKey(color.toLowerCase())) {
-            return colors.get(color);
+        if (foreground.containsKey(color.toLowerCase())) {
+            return foreground.get(color);
         }
         else {
             throw new RuntimeErrorException(null);
@@ -32,9 +33,9 @@ public class foreground {
     }
 
     public String getColorKey(String ansi) {
-        if (colors.containsValue(ansi)){
-            for (String i : colors.keySet()) {
-                if (colors.get(i).equals(ansi)) {
+        if (foreground.containsValue(ansi)){
+            for (String i : foreground.keySet()) {
+                if (foreground.get(i).equals(ansi)) {
                     return i;
                 } 
             }

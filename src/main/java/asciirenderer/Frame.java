@@ -5,14 +5,14 @@ package asciirenderer;
  * @version 
  */
 
-import asciirenderer.colors.foreground;
+import asciirenderer.colors.Color;
 
 public class Frame {
     int height;
     int width;
     String[][] pixelFrame;
     String[][] colorFrame;
-    foreground color;
+    Color color;
 
     /**
      * Sets the dimensions of the frame
@@ -22,7 +22,7 @@ public class Frame {
     public Frame(int height, int width){ 
         pixelFrame = new String[height][width];
         colorFrame = new String[height][width];
-        color = new foreground();
+        color = new Color();
 
         for (int row = 0; row < height; row++) {
             for (int col = 0; col < width; col++) {
@@ -92,26 +92,11 @@ public class Frame {
         else throw new RuntimeException("frame " + y + " " + x + " does not exist");
     }
 
-    public void setColor(int y, int x, String ansi) {
+    public void setColor(int y, int x, String desiredColor) {
         if (checkPixel(y, x)) {
-            colorFrame[y][x] = ansi;
+            colorFrame[y][x] = color.getAnsi(desiredColor) ;
             return;
         }
-    }
-    
-    @Override
-    public String toString() {
-        String str = "";
-        for (int i = 0; i < pixelFrame.length; i++) {
-            str += "\n";
-            for (int j = 0; j < pixelFrame[i].length; j++) {
-                if (pixelFrame[i][j] == null) {
-                    str += " ";
-                }
-                else str += pixelFrame[i][j];
-            }
-        }
-        return str;
     }
     
     private boolean checkPixel(int y, int x) {
@@ -132,5 +117,20 @@ public class Frame {
             }
         }
         return true;
+    }
+
+    @Override
+    public String toString() {
+        String str = "";
+        for (int i = 0; i < pixelFrame.length; i++) {
+            str += "\n";
+            for (int j = 0; j < pixelFrame[i].length; j++) {
+                if (pixelFrame[i][j] == null) {
+                    str += " ";
+                }
+                else str += pixelFrame[i][j];
+            }
+        }
+        return str;
     }
 }

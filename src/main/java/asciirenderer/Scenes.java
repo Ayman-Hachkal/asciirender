@@ -26,8 +26,8 @@ public class Scenes {
             for (int col = 0; col < frame.getWidth(); col++) {
                 if (frame.getPixelFrame(row, col).equals("X")) {
                     frame.setPixel(row, col, " ");
-                    if (col > frame.getWidth()) {
-                        if (row > frame.getHeight()) {
+                    if (col >= frame.getWidth() - 1) {
+                        if (row >= frame.getHeight() - 1) {
                             frame.setPixel(0, 0, "X");
                             return;
                         }
@@ -37,7 +37,7 @@ public class Scenes {
                         }
                     }
                     else {
-                        frame.setPixel(row, col + 1, "X");
+                        frame.setPixel(row , col + 1, "X");
                         return;
                     }
                 }

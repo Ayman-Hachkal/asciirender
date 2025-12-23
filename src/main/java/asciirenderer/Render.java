@@ -1,12 +1,16 @@
 /* TODO
  * Correctly fix frame resizing (Tough) 
- * Add Color (Tough)
  * Commenting (easy)
  * Make test cases to see if it works correctly (Medium)
  * add windowing features (maybe) - Far in the future development
  * maybe change setPixel so a String multi character String can be passed through and cycle through the image (Easy)
  * add ability to set custom window size and chose the axis of the terminal location to display (medium)
  * compatibility to read input of folder images to render them in ascii
+ * add sprite features
+ */
+
+/* Currently working on
+  Sprite
  */
 
  /*
@@ -21,7 +25,7 @@ import org.jline.terminal.Size;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
-import asciirenderer.colors.foreground;
+import asciirenderer.colors.Color;
 
 /**
  * The rendering engine for ascii characters in a terminal
@@ -29,11 +33,14 @@ import asciirenderer.colors.foreground;
  * @version 1.0 
  */
 class Render { 
+  int refreshRate;
+  int tickRate;
   int consoleHeight;
   int consoleWidth;
   Frame frame;
   Frame prevFrame;
-  foreground textColor;
+  Color textColor;
+  Terminal terminal;
 
   /**
    * Initializes the window by getting the terminal dimensions
@@ -41,10 +48,9 @@ class Render {
    * @throws IOException
    */
   public Render() throws IOException { 
-    this.consoleWidth = 0;
-    this.consoleHeight = 0;
-
-    this.setDimensions();
+    screenClear();
+    terminal = TerminalBuilder.terminal(); 
+    setDimensions();
 
     frame = new Frame(consoleHeight, consoleWidth);
     firstFrame();
@@ -57,10 +63,11 @@ class Render {
    * @throws IOException 
    */
   public Render(int height, int width) throws IOException {
+    screenClear();
+    terminal = TerminalBuilder.terminal(); 
+    setDimensions();
 
-    setDimensions(height, width);
-
-    frame = new Frame(consoleHeight, consoleWidth);
+    frame = new Frame(height, width);
     firstFrame();
   }
 
@@ -88,7 +95,7 @@ class Render {
    * @return if it successfully assigned the String value to the frame pixel
    */
   public boolean setFrame(int row, int col, String obj) {
-    if (row >= 0 || row < consoleHeight && col >= 0 || col < consoleWidth){
+    if (row >= 0 || row < frame.height && col >= 0 || col < frame.width){
       frame.setPixel(row, col, obj);
       return true;
     }
@@ -128,9 +135,9 @@ class Render {
    * At the end of the method it copies {@link #frame} into {@link #prevFrame}
    */
   private void firstFrame() { 
-    for (int row = 0; row < consoleHeight; row++) {
-      for (int col = 0; col < consoleWidth; col++) {
-        if (row == 0 || row == consoleHeight - 1|| col == 0 || col == consoleWidth - 1){ 
+    for (int row = 0; row < frame.width; row++) {
+      for (int col = 0; col < frame.height; col++) {
+        if (row == 0 || row == frame.height - 1|| col == 0 || col == frame.width - 1){ 
           frame.setPixel(row, col, "#");
         }
         else {
@@ -138,7 +145,6 @@ class Render {
         }
       }
     }
-    System.out.print(frame.toString());
     prevFrame = new Frame(consoleHeight, consoleWidth);
     prevFrame.frameCopy(frame);
   }
@@ -150,60 +156,72 @@ class Render {
    * @throws IOException
    */
   public boolean changedDimensions() throws IOException {
-    Terminal terminal = TerminalBuilder.terminal(); 
     Size size = terminal.getSize();
     int updateWidth = size.getColumns();
     int updateHeight = size.getRows();
 
-    if (updateHeight!= consoleHeight || updateWidth!= consoleWidth){
+    if (updateHeight != consoleHeight || updateWidth != consoleWidth){
+      consoleHeight = updateHeight;
+      consoleWidth = updateWidth;
       return true;
     }
     return false;
   }
 
-  public int[] newDimensions() throws IOException {
-    int[] dimensions = new int[2];
-    Terminal terminal = TerminalBuilder.terminal();
-    Size size = terminal.getSize();
-    dimensions[0] = size.getRows();
-    dimensions[1] = size.getColumns(); 
-    return dimensions; 
-  }
-
   public void setDimensions() throws IOException {
-    Terminal terminal = TerminalBuilder.terminal(); 
     Size size = terminal.getSize();
-    this.consoleWidth =  size.getColumns();
-    this.consoleHeight = size.getRows();
+    consoleWidth =  size.getColumns();
+    consoleHeight = size.getRows();
     return; 
-  }
-  public void setDimensions(int width, int height) {
-    this.consoleHeight = height;
-    this.consoleWidth = width;
-    return;
   }
   
   /**
    * prints the board to screen by comparing {@link #prevFrame} with {@link #frame} if there is a difference in 
    * the pixel the new frames pixel is then replaced using ansi escape code 
+   * @throws IOException 
    */
-  public void printBoard() {
-    for (int row = 0; row < consoleHeight; row++) {
-      for (int col = 0; col < consoleWidth; col++) {
-        if (!frame.getColorFrame(row, col).equals(prevFrame.getColorFrame(row, col)) 
-        ||  !frame.getPixelFrame(row, col).equals(prevFrame.getPixelFrame(row, col))) {
-          System.out.print("\u001b[" + (row + 1)+ ";" + (col + 1)+ "H");
-          System.out.println(frame.getColorFrame(row, col));
-          System.out.print(frame.getPixelFrame(row, col));
+  public void printBoard() throws IOException {
+    if (changedDimensions()) {
+      screenClear();
+      forcePrint();
+    }
+    else {
+      for (int row = 0; row < frame.height; row++) {
+        for (int col = 0; col < frame.width; col++) {
+          if (!frame.getColorFrame(row, col).equals(prevFrame.getColorFrame(row, col)) 
+          ||  !frame.getPixelFrame(row, col).equals(prevFrame.getPixelFrame(row, col))) {
+            System.out.print("\u001b[" + (row + 1)+ ";" + (col + 1)+ "H");
+            System.out.print(frame.getColorFrame(row, col));
+            System.out.print(frame.getPixelFrame(row, col));
+          }
         }
       }
     }
-    System.out.print("\u001b[" + consoleHeight + ";" + consoleWidth+ "H");
+    System.out.print("\u001b[" + (frame.height + 1)+ ";" + 1 +"H");
+    System.out.print("\033[?25l");
+    System.out.print("\033[0K");
     System.out.flush();
     prevFrame.frameCopy(frame);
   }
 
-  public String ansi(int row, int col) {
-    return textColor.getAnsi(frame.getColorFrame(row, col));
+  private void forcePrint() {
+    for (int row = 0; row < frame.height; row++) {
+      for (int col = 0; col < frame.width; col++) {
+        System.out.print("\u001b[" + (row + 1)+ ";" + (col + 1)+ "H");
+        System.out.print(frame.getColorFrame(row, col));
+        System.out.print(frame.getPixelFrame(row, col));
+      }
+    }
+    System.out.print("\u001b[" + (frame.height + 1)+ ";" + 1 +"H");
+    System.out.print("\033[?25l");
+    System.out.print("\033[0K");
+    System.out.flush();
+    prevFrame.frameCopy(frame);
   }
+
+  public void screenClear() {
+    System.out.print("\033[H\033[2J");  
+    System.out.flush();  
+  }
+
 }
